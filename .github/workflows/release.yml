@@ -1,0 +1,37 @@
+name: Generate Release Checksums
+on:
+  release:
+    types: [published, created] # Triggers when you manually create a release
+
+jobs:
+  checksum:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download Files from Release
+        uses: robinraju/release-downloader@v1.10
+        with:
+          latest: true
+          fileName: "*" # Downloads everything you manually uploaded (exe, dmg)
+          out-file-path: "./downloads"
+
+      - name: Generate Checksums
+        run: |
+          cd downloads
+          sha256sum app.exe > checksum_windows.txt || echo "app.exe not found"
+          sha256sum app.dmg > checksum_mac.txt || echo "app.dmg not found"
+          
+          echo "SECURITY IDENTIFICATION:"
+          cat *.txt
+
+      - name: Upload Checksums back to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: downloads/*.txt
+
+
+          
